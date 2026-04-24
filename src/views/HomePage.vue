@@ -8,6 +8,9 @@
           登录成功后，操作员可以从这里查看检测任务、成熟度分析结果和当前设备状态，
           快速进入每日分选工作。
         </p>
+        <div class="hero-actions">
+          <button class="primary-button" type="button" @click="goDetect">进入柑橘检测</button>
+        </div>
       </div>
 
       <div class="hero-card">
@@ -86,6 +89,11 @@ export default {
     MetricCard,
     BatchTable
   },
+  methods: {
+    goDetect() {
+      this.$router.push('/detect')
+    }
+  },
   data() {
     return {
       batches: [
@@ -163,6 +171,22 @@ export default {
   color: #475569;
   font-size: 16px;
   line-height: 1.8;
+}
+
+.hero-actions {
+  margin-top: 24px;
+}
+
+.primary-button {
+  border: none;
+  padding: 14px 22px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ea580c 0%, #15803d 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 16px 35px rgba(234, 88, 12, 0.2);
 }
 
 .hero-card {

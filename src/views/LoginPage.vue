@@ -35,8 +35,8 @@ export default {
     }
   },
   methods: {
-    handleLoginSuccess(payload) {
-      this.$emit('login-success', payload)
+    handleLoginSuccess() {
+      this.$router.push('/home')
     },
     handleLogin(payload) {
       this.loading = true
@@ -45,9 +45,9 @@ export default {
 
       window.setTimeout(() => {
         if (payload.username === 'admin' && payload.password === '123456') {
-          this.successMessage = '登录成功，后续可以在这里接入跳转或用户信息拉取逻辑。'
+          // this.successMessage = '登录成功，后续可以在这里接入跳转或用户信息拉取逻辑。'
         } else {
-          this.errorMessage = '账号或密码不正确，请检查后重试。'
+          // this.errorMessage = '账号或密码不正确，请检查后重试。'
         }
 
         this.loading = false

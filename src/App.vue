@@ -1,30 +1,12 @@
 <template>
   <div id="app">
-    <LoginPage v-if="currentPage === 'login'" @login-success="goHome" />
-    <HomePage v-else />
+    <router-view />
   </div>
 </template>
 
 <script>
-import LoginPage from './views/LoginPage.vue'
-import HomePage from './views/HomePage.vue'
-
 export default {
-  name: 'App',
-  components: {
-    LoginPage,
-    HomePage
-  },
-  data() {
-    return {
-      currentPage: 'login'
-    }
-  },
-  methods: {
-    goHome() {
-      this.currentPage = 'home'
-    }
-  }
+  name: 'App'
 }
 </script>
 
