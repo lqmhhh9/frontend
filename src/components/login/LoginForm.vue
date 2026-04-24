@@ -43,6 +43,10 @@
       <button class="submit-button" type="submit" :disabled="loading">
         {{ loading ? '登录中...' : '立即登录' }}
       </button>
+
+      <button class="register-button" type="button" @click="goRegister">
+        去注册
+      </button>
     </form>
 
     <footer class="tips">
@@ -89,6 +93,9 @@ export default {
     }
   },
   methods: {
+    goRegister() {
+      this.$router.push('/register')
+    },
     async submitForm() {
       if (!this.form.username || !this.form.password) {
         this.localError = '用户名和密码不能为空。'
@@ -241,6 +248,25 @@ export default {
 .submit-button:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+.register-button {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 15px 18px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.register-button:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
 }
 
 .tips {
