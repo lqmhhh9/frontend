@@ -31,27 +31,32 @@
           </label>
           <label class="field">
             <span>批次编号</span>
-            <input type="text" placeholder="例如 CJ-20260424-05">
+            <input v-model.trim="form.batchNo" type="text" placeholder="例如 CJ-20260424-05">
           </label>
           <label class="field">
             <span>备注信息</span>
-            <input type="text" placeholder="记录果园、采摘时间等信息">
+            <input v-model.trim="form.remark" type="text" placeholder="记录果园、采摘时间等信息">
           </label>
         </div>
-        <button class="action-button" type="button">开始检测（前端演示）</button>
+        <p v-if="actionMessage" class="action-message" :class="actionState">{{ actionMessage }}</p>
+        <button class="action-button" type="button" :disabled="loading" @click="startDetect">
+          {{ loading ? '上传中...' : '开始检测（前端演示）' }}
+        </button>
       </section>
     </section>
 
     <section class="workspace">
-      <UploadPanel />
+      <UploadPanel @upload-change="handleUploadChange" />
       <ResultSummary @back-home="goHome" />
     </section>
   </main>
 </template>
 
 <script>
+import axios from 'axios'
 import UploadPanel from '@/components/detect/UploadPanel.vue'
 import ResultSummary from '@/components/detect/ResultSummary.vue'
+import { getCurrentUsername } from '@/utils/auth'
 
 export default {
   name: 'DetectPage',
@@ -59,7 +64,85 @@ export default {
     UploadPanel,
     ResultSummary
   },
+  data() {
+    return {
+      hasUploadedImage: false,
+      selectedImage: null,
+      form: {
+        batchNo: '',
+        remark: ''
+      },
+      actionMessage: '',
+      actionState: 'warning',
+      loading: false
+    }
+  },
   methods: {
+    handleUploadChange(payload) {
+      this.hasUploadedImage = payload.uploaded
+      this.selectedImage = payload.file
+      this.actionMessage = ''
+    },
+    startDetect() {
+      if (!this.hasUploadedImage) {
+        this.actionState = 'warning'
+        this.actionMessage = '请先上传图片后再开始检测。'
+        window.alert('请先上传图片后再开始检测。')
+        return
+      }
+
+      if (!this.form.batchNo) {
+        this.actionState = 'warning'
+        this.actionMessage = '请先填写图片批次编号。'
+        window.alert('请先填写图片批次编号。')
+        return
+      }
+
+      const username = getCurrentUsername()
+
+      if (!username) {
+        this.actionState = 'warning'
+        this.actionMessage = '当前未获取到登录用户，请重新登录后再上传图片。'
+        window.alert('当前未获取到登录用户，请重新登录后再上传图片。')
+        this.$router.push('/login')
+        return
+      }
+
+      const timestamp = Date.now()
+      const imageId = `${timestamp}_${username}`
+
+      const formData = new FormData()
+      formData.append('file', this.selectedImage)
+      formData.append('batchNo', this.form.batchNo)
+      formData.append('imageId', imageId)
+      formData.append('remark', this.form.remark)
+      formData.append('username', username)
+
+      this.loading = true
+      this.actionMessage = ''
+
+      const request = axios.create({
+        baseURL: 'http://localhost:5000',
+      })
+
+      request({
+        method: 'POST',
+        url: '/api/upload/upload',
+        data: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }).then((res) => {
+        console.log(res)
+        this.actionState = 'success'
+        this.actionMessage = `图片上传成功，已发送到后端。图片ID：${imageId}`
+      }).catch(() => {
+        this.actionState = 'warning'
+        this.actionMessage = '图片上传失败，请检查后端接口是否正常。'
+      }).finally(() => {
+        this.loading = false
+      })
+    },
     goHome() {
       this.$router.push('/home')
     }
@@ -157,6 +240,31 @@ export default {
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.action-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.action-message {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.action-message.warning {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.action-message.success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
 }
 
 .workspace {

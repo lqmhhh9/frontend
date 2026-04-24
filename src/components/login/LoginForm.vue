@@ -58,6 +58,7 @@
 
 <script>
 import axios from 'axios'
+import { setCurrentUser } from '@/utils/auth'
 export default {
   name: 'LoginForm',
   props: {
@@ -113,6 +114,7 @@ export default {
         const code=res.data.code
         console.log(code)
         if (code === 1) {
+          setCurrentUser(res.data.username || this.form.username)
           this.localError = ''
           this.$emit('login-success', res.data)
           return

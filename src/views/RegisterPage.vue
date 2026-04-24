@@ -10,7 +10,7 @@
       <form class="register-form" @submit.prevent>
         <label class="field">
           <span>用户名</span>
-          <input v-model="form.username" type="text" placeholder="请输入用户名">
+          <input v-model.trim="form.username" type="text" placeholder="请输入用户名">
         </label>
 
         <label class="field">
@@ -20,10 +20,15 @@
 
         <label class="field">
           <span>确认密码</span>
-          <input  type="password" placeholder="请再次输入密码">
+          <input v-model="form.confirmPassword" type="password" placeholder="请再次输入密码">
         </label>
 
-        <button class="primary-button" type="button" @click="registerUser">注册账号</button>
+        <p v-if="errorMessage" class="feedback error">{{ errorMessage }}</p>
+        <p v-else-if="successMessage" class="feedback success">{{ successMessage }}</p>
+
+        <button class="primary-button" type="button" :disabled="loading" @click="registerUser">
+          {{ loading ? '注册中...' : '注册账号' }}
+        </button>
         <button class="secondary-button" type="button" @click="goLogin">返回登录</button>
       </form>
     </section>
@@ -32,6 +37,7 @@
 
 <script>
 import axios from 'axios'
+import { setCurrentUser } from '@/utils/auth'
 export default {
   name: 'RegisterPage',
   data(){
@@ -39,7 +45,12 @@ export default {
       form:{
         username:'',
         password:'',
+        confirmPassword: ''
       }
+      ,
+      errorMessage: '',
+      successMessage: '',
+      loading: false
     }
   },
   methods: {
@@ -47,6 +58,22 @@ export default {
       this.$router.push('/login')
     },
     registerUser(){
+      if (!this.form.username || !this.form.password || !this.form.confirmPassword) {
+        this.errorMessage = '用户名和密码不能为空。'
+        this.successMessage = ''
+        return
+      }
+
+      if (this.form.password !== this.form.confirmPassword) {
+        this.errorMessage = '两次输入的密码不一致。'
+        this.successMessage = ''
+        return
+      }
+
+      this.loading = true
+      this.errorMessage = ''
+      this.successMessage = ''
+
       const request= axios.create({
         baseURL:"http://localhost:5000",
       })
@@ -56,6 +83,27 @@ export default {
         data:{"username":this.form.username,"password":this.form.password},
       }).then((res)=>{
         console.log(res)
+        const code=res.data.code
+
+        if (code === 1) {
+          setCurrentUser(this.form.username)
+          this.successMessage = '注册成功，正在跳转到首页。'
+          window.setTimeout(() => {
+            this.$router.push('/home')
+          }, 800)
+          return
+        }
+
+        if (code === -1) {
+          this.errorMessage = '该用户名已存在，请更换后重试。'
+          return
+        }
+
+        this.errorMessage = '注册失败，请稍后重试。'
+      }).catch(() => {
+        this.errorMessage = '注册请求失败，请检查后端服务是否正常。'
+      }).finally(() => {
+        this.loading = false
       })
     }
   }
@@ -149,11 +197,34 @@ export default {
   cursor: pointer;
 }
 
+.feedback {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.feedback.error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.feedback.success {
+  background: #ecfdf5;
+  color: #047857;
+}
+
 .primary-button {
   margin-top: 6px;
   border: none;
   background: linear-gradient(135deg, #2563eb 0%, #0f766e 100%);
   color: #fff;
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .secondary-button {

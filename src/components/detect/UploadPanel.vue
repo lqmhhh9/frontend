@@ -38,7 +38,8 @@ export default {
   data() {
     return {
       previewUrl: '',
-      fileName: ''
+      fileName: '',
+      selectedFile: null
     }
   },
   methods: {
@@ -48,8 +49,18 @@ export default {
         return
       }
 
+      if (this.previewUrl) {
+        URL.revokeObjectURL(this.previewUrl)
+      }
+
+      this.selectedFile = file
       this.fileName = file.name
       this.previewUrl = URL.createObjectURL(file)
+      this.$emit('upload-change', {
+        uploaded: true,
+        file,
+        fileName: file.name
+      })
     }
   },
   beforeDestroy() {
