@@ -4,6 +4,7 @@
       :loading="loading"
       :error-message="errorMessage"
       :success-message="successMessage"
+      @login-success="handleLoginSuccess"
       @submit="handleLogin"
     />
   </main>
@@ -34,6 +35,9 @@ export default {
     }
   },
   methods: {
+    handleLoginSuccess(payload) {
+      this.$emit('login-success', payload)
+    },
     handleLogin(payload) {
       this.loading = true
       this.errorMessage = ''

@@ -105,6 +105,13 @@ export default {
         console.log(res)
         const code=res.data.code
         console.log(code)
+        if (code === 1) {
+          this.localError = ''
+          this.$emit('login-success', res.data)
+          return
+        }
+
+        this.localError = '登录失败，请检查账号或密码。'
       })
 
 
