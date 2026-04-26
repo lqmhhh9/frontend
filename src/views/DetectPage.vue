@@ -1,5 +1,6 @@
 <template>
   <main class="detect-page">
+    <ProfileEntry />
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Citrus Inspection Workspace</p>
@@ -54,6 +55,7 @@
 
 <script>
 import axios from 'axios'
+import ProfileEntry from '@/components/common/ProfileEntry.vue'
 import UploadPanel from '@/components/detect/UploadPanel.vue'
 import ResultSummary from '@/components/detect/ResultSummary.vue'
 import { getCurrentUsername } from '@/utils/auth'
@@ -61,6 +63,7 @@ import { getCurrentUsername } from '@/utils/auth'
 export default {
   name: 'DetectPage',
   components: {
+    ProfileEntry,
     UploadPanel,
     ResultSummary
   },
@@ -135,7 +138,13 @@ export default {
       }).then((res) => {
         console.log(res)
         this.actionState = 'success'
-        this.actionMessage = `图片上传成功，已发送到后端。图片ID：${imageId}`
+        this.actionMessage = `图片上传成功，已发送到后端。图片ID：${imageId}，可前往个人中心查看检测结果。`
+        window.setTimeout(() => {
+          const shouldGoProfile = window.confirm('图片上传成功，可以前往个人中心查看检测结果。是否现在前往？')
+          if (shouldGoProfile) {
+            this.$router.push('/profile')
+          }
+        }, 100)
       }).catch(() => {
         this.actionState = 'warning'
         this.actionMessage = '图片上传失败，请检查后端接口是否正常。'

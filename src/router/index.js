@@ -4,6 +4,8 @@ import LoginPage from '@/views/LoginPage.vue'
 import RegisterPage from '@/views/RegisterPage.vue'
 import HomePage from '@/views/HomePage.vue'
 import DetectPage from '@/views/DetectPage.vue'
+import ProfilePage from '@/views/ProfilePage.vue'
+import ProfileResultPage from '@/views/ProfileResultPage.vue'
 import { getCurrentUsername } from '@/utils/auth'
 
 Vue.use(VueRouter)
@@ -32,6 +34,16 @@ const routes = [
     path: '/detect',
     name: 'detect',
     component: DetectPage
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfilePage
+  },
+  {
+    path: '/profile/result/:imageId',
+    name: 'profile-result',
+    component: ProfileResultPage
   }
 ]
 
@@ -42,7 +54,9 @@ const router = new VueRouter({
 
 router.beforeEach((to, from, next) => {
   const username = getCurrentUsername()
-  const requiresAuth = ['/home', '/detect'].includes(to.path)
+  const requiresAuth = to.path.startsWith('/home')
+    || to.path.startsWith('/detect')
+    || to.path.startsWith('/profile')
   const guestOnly = ['/login', '/register'].includes(to.path)
 
   if (requiresAuth && !username) {

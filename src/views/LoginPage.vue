@@ -1,5 +1,6 @@
 <template>
   <main class="login-page" :style="pageStyle">
+    <ProfileEntry />
     <LoginForm
       :loading="loading"
       :error-message="errorMessage"
@@ -12,12 +13,14 @@
 
 <script>
 import LoginForm from '@/components/login/LoginForm.vue'
+import ProfileEntry from '@/components/common/ProfileEntry.vue'
 import citrusLoginBg from '@/assets/citrus-login-bg.svg'
 
 export default {
   name: 'LoginPage',
   components: {
-    LoginForm
+    LoginForm,
+    ProfileEntry
   },
   data() {
     return {

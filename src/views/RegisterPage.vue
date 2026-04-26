@@ -1,5 +1,6 @@
 <template>
   <main class="register-page">
+    <ProfileEntry />
     <section class="register-card">
       <header class="card-header">
         <p class="eyebrow">Create Account</p>
@@ -37,9 +38,13 @@
 
 <script>
 import axios from 'axios'
+import ProfileEntry from '@/components/common/ProfileEntry.vue'
 import { setCurrentUser } from '@/utils/auth'
 export default {
   name: 'RegisterPage',
+  components: {
+    ProfileEntry
+  },
   data(){
     return {
       form:{

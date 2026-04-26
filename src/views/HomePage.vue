@@ -1,5 +1,6 @@
 <template>
   <main class="home-page">
+    <ProfileEntry />
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Citrus Maturity Dashboard</p>
@@ -80,12 +81,14 @@
 </template>
 
 <script>
+import ProfileEntry from '@/components/common/ProfileEntry.vue'
 import MetricCard from '@/components/home/MetricCard.vue'
 import BatchTable from '@/components/home/BatchTable.vue'
 
 export default {
   name: 'HomePage',
   components: {
+    ProfileEntry,
     MetricCard,
     BatchTable
   },
