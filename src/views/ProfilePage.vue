@@ -11,6 +11,7 @@
       <div class="hero-actions">
         <button class="action-button" type="button" @click="goDetect">继续检测</button>
         <button class="secondary-button" type="button" @click="goHome">返回首页</button>
+        <button class="logout-button" type="button" @click="logout">退出登录</button>
       </div>
     </section>
 
@@ -72,7 +73,7 @@
 
 <script>
 import axios from 'axios'
-import { getCurrentUsername } from '@/utils/auth'
+import { clearCurrentUser, getCurrentUsername } from '@/utils/auth'
 
 export default {
   name: 'ProfilePage',
@@ -102,19 +103,31 @@ export default {
 
       return date.toLocaleString()
     },
+    parseRecordTime(item, imageId) {
+      const uploadTime = item.upload_time || item.created_at || item.createdAt || ''
+      const parsedUploadTime = uploadTime ? new Date(uploadTime).getTime() : NaN
+
+      if (!Number.isNaN(parsedUploadTime)) {
+        return parsedUploadTime
+      }
+
+      const imageIdParts = imageId.split('_')
+      const timestamp = imageIdParts.length ? Number(imageIdParts[0]) : NaN
+      return Number.isNaN(timestamp) ? 0 : timestamp
+    },
     normalizeRecord(item) {
       const imageId = item.image_id || item.images_id || item.imageId || ''
       const batchNo = item.batch_id || item.batch_no || item.batchNo || '暂无'
       const remark = item.remark || item.note || ''
       const uploadTime = item.upload_time || item.created_at || item.createdAt || ''
-      const imageIdParts = imageId.split('_')
-      const timestamp = imageIdParts.length ? imageIdParts[0] : ''
+      const sortTime = this.parseRecordTime(item, imageId)
 
       return {
         imageId,
         batchNo,
         remark,
-        createdAt: uploadTime || this.formatTimestamp(timestamp)
+        createdAt: uploadTime || this.formatTimestamp(sortTime),
+        sortTime
       }
     },
     fetchDetectRecords() {
@@ -141,6 +154,7 @@ export default {
             return imageId ? imageId.endsWith(`_${this.username}`) : true
           })
           .map(item => this.normalizeRecord(item))
+          .sort((a, b) => b.sortTime - a.sortTime)
       }).catch(() => {
         this.userRecords = []
       })
@@ -164,6 +178,10 @@ export default {
     },
     goHome() {
       this.$router.push('/home')
+    },
+    logout() {
+      clearCurrentUser()
+      this.$router.push('/login')
     }
   }
   
@@ -243,6 +261,17 @@ export default {
   background: #fff;
   border: 1px solid #cbd5e1;
   color: #0f172a;
+}
+
+.logout-button {
+  border: none;
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .summary-grid {

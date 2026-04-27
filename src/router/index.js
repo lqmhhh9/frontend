@@ -57,15 +57,9 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.path.startsWith('/home')
     || to.path.startsWith('/detect')
     || to.path.startsWith('/profile')
-  const guestOnly = ['/login', '/register'].includes(to.path)
 
   if (requiresAuth && !username) {
     next('/login')
-    return
-  }
-
-  if (guestOnly && username) {
-    next('/home')
     return
   }
 

@@ -5,7 +5,7 @@
         <p class="eyebrow">Batch Result</p>
         <h1>批次检测结果</h1>
         <p class="description">
-          这里展示当前批次的检测详情。页面已经接上记录跳转，后续可以直接把后端返回的成熟度、品质判定和统计结果填进来。
+          这里展示当前批次的检测详情，包括 YOLO 检测结果、ENet 成熟度结果，以及后端返回的结果图片路径。
         </p>
       </div>
       <div class="hero-actions">
@@ -40,14 +40,35 @@
       <div class="result-layout">
         <section class="image-panel">
           <div class="image-head">
-            <h4>检测图片</h4>
-            <span>{{ imagePreview ? '已加载' : '暂无图片' }}</span>
+            <h4>结果图片</h4>
+            <span>{{ imageStatusText }}</span>
           </div>
-          <div class="image-frame">
-            <img v-if="imagePreview" :src="imagePreview" alt="检测结果图片">
-            <div v-else class="image-placeholder">
-              <strong>暂无图片可展示</strong>
-              <p>当前可以从后端返回图片地址，或者在记录列表跳转时把图片地址一起带过来。</p>
+
+          <div class="image-stack">
+            <div class="image-card">
+              <div class="image-card-head">
+                <h5>YOLO 结果图</h5>
+              </div>
+              <div class="image-frame">
+                <img v-if="yolo_result_path" :src="yolo_result_path" alt="YOLO 结果图片">
+                <div v-else class="image-placeholder">
+                  <strong>暂无 YOLO 结果图</strong>
+                  <p>后端返回 `yolo_result_path` 后，这里会直接显示图片。</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="image-card">
+              <div class="image-card-head">
+                <h5>ENet 结果图</h5>
+              </div>
+              <div class="image-frame">
+                <img v-if="ENet_result_path" :src="ENet_result_path" alt="ENet 结果图片">
+                <div v-else class="image-placeholder">
+                  <strong>暂无 ENet 结果图</strong>
+                  <p>后端返回 `ENet_result_path` 后，这里会直接显示图片。</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -59,9 +80,9 @@
             <p>后端返回的本次检测图片唯一标识。</p>
           </article>
           <article class="result-block">
-            <span>识别果实总数</span>
+            <span>识别柑橘总数</span>
             <strong>{{ yoloSummary.orangeNum }}</strong>
-            <p>当前图片中被识别到的柑橘总数量。</p>
+            <p>当前图片中识别到的柑橘总数量。</p>
           </article>
           <article class="result-block">
             <span>优质果数量</span>
@@ -79,6 +100,21 @@
             <p>当前检测结果返回的目标识别置信度。</p>
           </article>
           <article class="result-block">
+            <span>ENet 半熟果数量</span>
+            <strong>{{ enetSummary.orangeHalf }}</strong>
+            <p>ENet 结果中判定为半熟果的数量。</p>
+          </article>
+          <article class="result-block">
+            <span>ENet 成熟果数量</span>
+            <strong>{{ enetSummary.orangeOk }}</strong>
+            <p>ENet 结果中判定为成熟果的数量。</p>
+          </article>
+          <article class="result-block">
+            <span>ENet 未熟果数量</span>
+            <strong>{{ enetSummary.orangeUnder }}</strong>
+            <p>ENet 结果中判定为未熟果的数量。</p>
+          </article>
+          <article class="result-block">
             <span>备注信息</span>
             <strong>{{ remark || '无' }}</strong>
             <p>上传记录携带的备注会在这里同步展示。</p>
@@ -88,17 +124,7 @@
             <strong>{{ resultConclusion }}</strong>
             <p>根据后端返回的优果、坏果数量和置信度生成当前批次的摘要说明。</p>
           </article>
-          <article class="result-block result-block-wide">
-            <span>原始 YOLO 结果</span>
-            <strong>{{ rawYoloText }}</strong>
-            <p>这里保留后端返回的核心检测字段，方便继续联调。</p>
-          </article>
         </div>
-      </div>
-
-      <div class="raw-panel" v-if="rawResultText">
-        <h4>后端返回详情</h4>
-        <pre>{{ rawResultText }}</pre>
       </div>
     </section>
   </main>
@@ -115,7 +141,9 @@ export default {
       loading: false,
       message: '',
       messageType: 'warning',
-      resultData: null
+      resultData: null,
+      yolo_result_path: '',
+      ENet_result_path: ''
     }
   },
   computed: {
@@ -133,9 +161,6 @@ export default {
     },
     createdAt() {
       return this.$route.query.createdAt || ''
-    },
-    routeImageUrl() {
-      return this.$route.query.imageUrl || ''
     },
     statusText() {
       if (this.loading) {
@@ -161,13 +186,23 @@ export default {
           : (yoloResult.conf || '0.0000')
       }
     },
+    enetSummary() {
+      const data = this.resultData || {}
+      const enetResult = data.ENet_result || data.enet_result || data.ENetResult || {}
+
+      return {
+        orangeHalf: enetResult.orange_half ?? enetResult.orangeHalf ?? 0,
+        orangeOk: enetResult.orange_all ?? enetResult.orangeOk ?? 0,
+        orangeUnder: enetResult.orange_no ?? enetResult.orangeUnder ?? 0
+      }
+    },
     resultConclusion() {
       if (!this.resultData) {
-        return '等待后端返回检测结论'
+        return '等待后端返回检测结论。'
       }
 
       if (this.yoloSummary.bad > 0) {
-        return '当前图片中检测到坏果，建议优先复查该批次。'
+        return '当前图片中检测到坏果，建议优先复检该批次。'
       }
 
       if (this.yoloSummary.good > 0) {
@@ -176,31 +211,12 @@ export default {
 
       return '当前批次暂无明确结论，请结合原始图像继续确认。'
     },
-    rawYoloText() {
-      if (!this.resultData) {
-        return '等待返回'
+    imageStatusText() {
+      if (this.yolo_result_path || this.ENet_result_path) {
+        return '已加载'
       }
 
-      try {
-        return JSON.stringify(this.resultData.yolo_result || this.resultData.yoloResult || {}, null, 2)
-      } catch (error) {
-        return '等待返回'
-      }
-    },
-    imagePreview() {
-      const data = this.resultData || {}
-      return data.image_url || data.imageUrl || data.url || this.routeImageUrl || ''
-    },
-    rawResultText() {
-      if (!this.resultData) {
-        return ''
-      }
-
-      try {
-        return JSON.stringify(this.resultData, null, 2)
-      } catch (error) {
-        return ''
-      }
+      return '暂无图片'
     }
   },
   mounted() {
@@ -230,13 +246,19 @@ export default {
         }
       }).then((res) => {
         const payload = res.data.data
-        console.log(payload)
         this.resultData = Array.isArray(payload) ? (payload[0] || null) : payload
-        console.log(this.resultData)
+        this.yolo_result_path = this.resultData
+          ? (this.resultData.yolo_result_path || this.resultData.yoloResultPath || '')
+          : ''
+        this.ENet_result_path = this.resultData
+          ? (this.resultData.ENet_result_path || this.resultData.enet_result_path || this.resultData.ENetResultPath || '')
+          : ''
         this.messageType = 'success'
         this.message = this.resultData ? '检测结果已成功加载。' : '后端已响应，但当前没有结果数据。'
       }).catch(() => {
         this.resultData = null
+        this.yolo_result_path = ''
+        this.ENet_result_path = ''
         this.messageType = 'warning'
         this.message = '结果请求失败，请检查后端接口是否正常。'
       }).finally(() => {
@@ -421,6 +443,27 @@ export default {
   background: #f8fafc;
 }
 
+.image-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.image-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.image-card-head {
+  margin-bottom: 12px;
+}
+
+.image-card-head h5 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 16px;
+}
+
 .image-head {
   display: flex;
   align-items: center;
@@ -445,19 +488,19 @@ export default {
   overflow: hidden;
   border-radius: 16px;
   background: #e2e8f0;
-  min-height: 360px;
+  min-height: 240px;
 }
 
 .image-frame img {
   width: 100%;
   height: 100%;
-  min-height: 360px;
+  min-height: 240px;
   object-fit: cover;
   display: block;
 }
 
 .image-placeholder {
-  min-height: 360px;
+  min-height: 240px;
   padding: 24px;
   display: flex;
   align-items: center;
@@ -505,28 +548,6 @@ export default {
 .result-block p {
   margin: 10px 0 0;
   color: #475569;
-  line-height: 1.7;
-}
-
-.raw-panel {
-  margin-top: 20px;
-  padding: 20px;
-  border-radius: 20px;
-  background: #f8fafc;
-}
-
-.raw-panel h4 {
-  margin: 0 0 12px;
-  color: #0f172a;
-  font-size: 18px;
-}
-
-.raw-panel pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  color: #334155;
-  font-size: 13px;
   line-height: 1.7;
 }
 
